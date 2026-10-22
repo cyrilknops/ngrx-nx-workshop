@@ -1,0 +1,29 @@
+name: Patched Node compatibility
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.4'
+      # Webpack 4 uses legacy hashing during the build only. The deployed
+      # Node runtime does not receive this option.
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+      - name: Validate application compatibility
+        env:
+          NODE_OPTIONS: --openssl-legacy-provider
+        run: |
+          npx nx run-many --target=build --all --configuration=production
